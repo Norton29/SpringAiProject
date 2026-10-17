@@ -1,0 +1,17 @@
+{
+  "description": "Project conventions for Java edits.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "apply_patch|Edit|Write|mcp__idea__execute_tool",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'dir=\"$PWD\"; while [[ \"$dir\" != \"/\" ]]; do if [[ -f \"$dir/.agents/hooks/guardrails.sh\" ]]; then exec bash \"$dir/.agents/hooks/guardrails.sh\"; fi; dir=\"$(dirname \"$dir\")\"; done; echo \"guardrails.sh not found from session cwd: $PWD\" >&2; exit 1'",
+            "statusMessage": "Checking Java conventions"
+          }
+        ]
+      }
+    ]
+  }
+}
