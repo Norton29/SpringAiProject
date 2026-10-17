@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 public class BookService {
 
     private final BookRepository bookRepository;
-    private final ReviewService reviewService;
+    private final GeminiService geminiService;
 
     public List<BookModel> findAll() {
         return bookRepository.findAll();
@@ -29,7 +29,11 @@ public class BookService {
     public BookModel save(BookRecordDto bookRecordDto) {
         BookModel bookModel = new BookModel();
         BeanUtils.copyProperties(bookRecordDto, bookModel);
-        bookModel.setReview(reviewService.generateReview(bookRecordDto.title()));
+        bookModel.setReview(geminiService.generateReview(bookRecordDto.title()));
+        bookModel.setRecommendations(geminiService.generateRecommendations(
+                bookRecordDto.title(),
+                bookRecordDto.author()
+        ));
         return bookRepository.save(bookModel);
     }
 

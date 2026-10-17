@@ -40,4 +40,7 @@ public class BookModel implements Serializable {
 
     @Column(nullable = true, length = 10000, columnDefinition = "TEXT")
     private String review;
+
+    @Column(nullable = true, length = 10000, columnDefinition = "TEXT")
+    private String recommendations;
 }
