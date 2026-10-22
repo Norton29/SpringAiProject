@@ -6,7 +6,9 @@ description: JPA entity, repository and schema conventions for this project. Use
 # JPA conventions
 
 ## Entities
-- Class name `<Name>Model`, table name `tb_<plural>` via `@Table(name = ...)`.
+- Keep the domain model framework-independent in `<feature>/domain`.
+- Put persistence entities in `<feature>/adapter/output/persistence` and name them `<Name>JpaEntity`.
+- Table name is `tb_<plural>` via `@Table(name = ...)`.
 - Mutable class with a no-arg constructor, getters and setters.
 - Primary key is `UUID` with `@GeneratedValue(strategy = GenerationType.AUTO)`.
 - Always declare `@Column` explicitly with `nullable` and `length`,
@@ -20,6 +22,7 @@ field leaves the old column behind permanently. If a change would require
 dropping a column, say so explicitly instead of generating a diverging schema.
 
 ## Repositories
-`public interface BookRepository extends JpaRepository<BookModel, UUID> {}`
-Derived queries for simple cases. No `@Query` unless the derived method
-name would be unreadable.
+- The domain defines a repository port such as `BookRepository`; it must not extend Spring Data interfaces.
+- Implement that port in a persistence adapter which maps between the domain model and the JPA entity.
+- Keep the Spring Data interface beside the persistence entity and name it `SpringData<Name>Repository`.
+- Derived queries for simple cases. No `@Query` unless the derived method name would be unreadable.

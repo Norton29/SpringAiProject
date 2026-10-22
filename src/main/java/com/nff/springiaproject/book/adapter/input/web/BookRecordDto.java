@@ -1,4 +1,4 @@
-package com.nff.springiaproject.dtos;
+package com.nff.springiaproject.book.adapter.input.web;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

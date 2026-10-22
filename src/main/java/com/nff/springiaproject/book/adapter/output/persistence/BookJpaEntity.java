@@ -1,7 +1,10 @@
-package com.nff.springiaproject.models;
+package com.nff.springiaproject.book.adapter.output.persistence;
 
+import com.nff.springiaproject.book.domain.BookEnrichmentStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -17,7 +20,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class BookModel implements Serializable {
+public class BookJpaEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -43,4 +46,20 @@ public class BookModel implements Serializable {
 
     @Column(nullable = true, length = 10000, columnDefinition = "TEXT")
     private String recommendations;
+
+    @Column(nullable = true, length = 100)
+    private String genre;
+
+    @Column(nullable = true, length = 150)
+    private String targetAudience;
+
+    @Column(nullable = true, length = 100)
+    private String language;
+
+    @Column(nullable = true, length = 1000)
+    private String keywords;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = true, length = 20)
+    private BookEnrichmentStatus enrichmentStatus;
 }

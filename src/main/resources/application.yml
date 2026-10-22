@@ -1,3 +1,7 @@
+book:
+  enrichment:
+    queue-poll-interval: 5000
+
 spring:
   config:
     import: "optional:file:.env[.properties]"
@@ -9,6 +13,25 @@ spring:
     password: ${DB_PASSWORD}
     hikari:
       maximum-pool-size: 5
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
+    username: ${RABBITMQ_USER}
+    password: ${RABBITMQ_PASSWORD}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        acknowledge-mode: auto
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 5s
+          multiplier: 2
+          max-interval: 30s
   jpa:
     hibernate:
       ddl-auto: update

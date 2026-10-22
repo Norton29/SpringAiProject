@@ -27,13 +27,13 @@ Never repeat the base URI in the methods.
 public class BookController {
 
     @GetMapping
-    public ResponseEntity<List<BookModel>> getAllBooks() { }
+    public ResponseEntity<List<BookResponseDto>> getAllBooks() { }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Object> getOneBook(@PathVariable(value = "id") UUID id) { }
+    public ResponseEntity<BookResponseDto> getOneBook(@PathVariable(value = "id") UUID id) { }
 
     @PostMapping
-    public ResponseEntity<BookModel> saveBook(@RequestBody @Valid BookRecordDto bookRecordDto) { }
+    public ResponseEntity<BookResponseDto> saveBook(@RequestBody @Valid BookRecordDto bookRecordDto) { }
 }
 ```
 
@@ -57,10 +57,17 @@ public class BookController {
 ## Input DTOs
 - Java records, named `<Name>RecordDto`.
 - Carry Bean Validation annotations.
+- Place HTTP request and response DTOs in the feature's `adapter/input/web` package.
 
 ## Responses
-- There are NO output DTOs. Return the entity.
+- Every response body containing resource data MUST use an output DTO, named `<Name>ResponseDto`.
+- Never return a JPA entity/model from a controller or expose it inside another response type.
+- Keep input and output DTOs separate. Output DTOs should be Java records and contain only fields intended for the API.
+- Map request DTOs to application inputs and domain objects to response DTOs in a web mapper.
+- Controllers only translate HTTP to application calls and back. They must not contain business rules or persistence mapping.
+- Do not use HATEOAS, links, `EntityModel`, or `CollectionModel` in responses.
+- A response with no resource data, such as a successful delete, may use `ResponseEntity<Void>`.
 - Controllers return `ResponseEntity<T>` and set the status explicitly
   with `ResponseEntity.status(HttpStatus.X).body(...)`.
-- Do not use by try/catch in the controller.
+- Do not use try/catch in the controller.
 - Errors will be addressed later upon request.
