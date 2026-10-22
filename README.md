@@ -1,44 +1,60 @@
 # Bookstore API
 
-API REST para cadastro e consulta de livros, desenvolvida com Spring Boot. Na criação de um livro, a aplicação usa Spring AI e o modelo Google Gemini para gerar um resumo curto em português. O projeto também demonstra versionamento de API pelo header `X-API-VERSION`.
+API REST para cadastro e consulta de livros, desenvolvida com Spring Boot. Na criação, o livro é salvo e uma solicitação de enriquecimento é colocada em uma fila RabbitMQ. Um consumidor processa a solicitação e usa Google Gemini para gerar resumo, recomendações e classificação do livro.
 
 ## Tecnologias
 
-- Java 25 e Spring Boot 4.1
-- Maven
+- Java 25, Spring Boot 4.1 e Maven
 - PostgreSQL, com schema atualizado pelo Hibernate (`ddl-auto: update`)
+- RabbitMQ para processamento assíncrono do enriquecimento
 - Spring AI com Google Gemini
-- Spring HATEOAS na versão `v1`
+- JUnit 5, Mockito e Testcontainers para testes
+
+## Arquitetura
+
+O código da funcionalidade de livros está organizado em camadas inspiradas na arquitetura clean:
+
+- `book/domain`: entidades de domínio, estados e contratos
+- `book/application`: casos de uso e regras da aplicação
+- `book/adapter/input`: entrada HTTP e mensagens RabbitMQ
+- `book/adapter/output`: integrações com Gemini, banco de dados e publicação de mensagens
+- `config`: configuração da aplicação e do RabbitMQ
+
+Os controllers recebem e devolvem DTOs. O modelo de domínio não é usado diretamente como contrato HTTP.
 
 ## Pré-requisitos
 
 - JDK 25
-- Docker e Docker Compose, caso use o PostgreSQL local
-- Uma chave da API Google Gemini para gerar reviews
+- Docker e Docker Compose para iniciar PostgreSQL e RabbitMQ locais
+- Uma chave da API Google Gemini
 
 ## Configuração
 
-A aplicação lê as configurações de um arquivo `.env` na raiz do projeto. Crie-o com estas variáveis:
+A aplicação lê configurações de um arquivo `.env` na raiz do projeto. Para usar os serviços locais definidos no `compose.yaml`, crie o arquivo com:
 
 ```properties
 DB_URL=jdbc:postgresql://localhost:5433/bookstore_db
 DB_USER=bookstore
 DB_PASSWORD=bookstore_dev
+RABBITMQ_HOST=localhost
+RABBITMQ_PORT=5672
+RABBITMQ_USER=bookstore
+RABBITMQ_PASSWORD=bookstore_dev
 GEMINI_API_KEY=sua-chave-da-api
 
-# Usadas pelo Docker Compose para configurar o banco local
+# Usadas pelo Docker Compose para configurar os containers locais
 POSTGRES_USER=bookstore
 POSTGRES_PASSWORD=bookstore_dev
 ```
 
-O `.env` está listado no `.gitignore`; não o adicione ao repositório. Para conectar ao Neon, substitua `DB_URL`, `DB_USER` e `DB_PASSWORD` pelos valores da conexão Neon. Mantenha os nomes das variáveis.
+O `.env` está listado no `.gitignore`; não o adicione ao repositório. Para conectar a um PostgreSQL externo, substitua `DB_URL`, `DB_USER` e `DB_PASSWORD` pelos valores da conexão e mantenha os nomes das variáveis.
 
 ## Como iniciar
 
-Com PostgreSQL local, inicie o container:
+Inicie PostgreSQL e RabbitMQ:
 
 ```bash
-docker compose up -d postgres
+docker compose up -d
 ```
 
 Depois, inicie a aplicação:
@@ -47,42 +63,66 @@ Depois, inicie a aplicação:
 ./mvnw spring-boot:run
 ```
 
-A API ficará disponível em `http://localhost:8080`. Para encerrar o PostgreSQL local:
+A API ficará disponível em `http://localhost:8080`. O painel de gerenciamento do RabbitMQ fica em `http://localhost:15672`; no ambiente local, use as credenciais configuradas em `RABBITMQ_USER` e `RABBITMQ_PASSWORD`.
+
+Para parar os containers:
 
 ```bash
 docker compose down
 ```
 
-Para compilar e verificar o projeto:
+Para compilar, executar os testes e verificar o projeto:
 
 ```bash
 ./mvnw -q verify
 ```
 
+## Processamento assíncrono
+
+O `POST /books` responde depois de salvar o livro, sem esperar o Gemini. A resposta inicial contém `enrichmentStatus: "PENDING"`. A aplicação publica a solicitação no RabbitMQ e o consumidor atualiza o livro quando o enriquecimento terminar. Consulte `GET /books/{id}` para acompanhar o estado:
+
+- `PENDING`: aguardando processamento ou em processamento
+- `COMPLETED`: resumo, recomendações e classificação foram salvos
+- `FAILED`: o processamento terminou sem sucesso
+
+O enriquecimento inclui `review`, `recommendations`, `genre`, `targetAudience`, `language` e `keywords`.
+
 ## Endpoints
 
-Todos os endpoints usam o caminho `/books`. Envie `X-API-VERSION: v1` para a versão com respostas HATEOAS ou `X-API-VERSION: v2` para respostas sem HATEOAS. Se o header for omitido, a versão padrão é `v1`.
+Todos os endpoints usam o caminho `/books`. Envie `X-API-VERSION: v1` ou `X-API-VERSION: v2`; se o header for omitido, a versão padrão é `v1`.
 
 | Método | Caminho | Descrição | Resposta de sucesso |
 |---|---|---|---|
 | `GET` | `/books` | Lista os livros | `200 OK` |
-| `GET` | `/books/{id}` | Consulta um livro | `200 OK` |
-| `POST` | `/books` | Cria um livro e gera seu review | `201 Created` |
+| `GET` | `/books/{id}` | Consulta um livro e o estado do enriquecimento | `200 OK` |
+| `POST` | `/books` | Cria um livro e agenda o enriquecimento | `201 Created` |
 | `PUT` | `/books/{id}` | Atualiza os dados do livro | `200 OK` |
 | `DELETE` | `/books/{id}` | Exclui um livro | `200 OK` |
 
-Consultas, atualizações ou exclusões de um ID inexistente retornam `404 Not Found`. O corpo de criação e atualização deve conter `title`, `author`, `publisher` e `publicationYear`. O campo `review` é gerado pela IA na criação.
+Consultas, atualizações ou exclusões de um ID inexistente retornam `404 Not Found`. Os corpos de criação e atualização devem conter `title`, `author`, `publisher` e `publicationYear`. Os campos gerados pela IA são preenchidos após o processamento da mensagem.
 
-Exemplo de criação usando `v2`:
+Exemplo de criação:
 
 ```bash
 curl -X POST http://localhost:8080/books \
   -H 'Content-Type: application/json' \
-  -H 'X-API-VERSION: v2' \
+  -H 'X-API-VERSION: v1' \
   -d '{
     "title": "Dom Casmurro",
     "author": "Machado de Assis",
     "publisher": "Editora Exemplo",
     "publicationYear": 1899
   }'
+```
+
+## Testes
+
+Os testes unitários de `BookService` usam JUnit e Mockito para verificar regras isoladas, como salvar o livro inicialmente como `PENDING` e enfileirar o ID sem chamar Gemini durante a requisição HTTP.
+
+O teste de integração `BookEnrichmentFlowIntegrationTest` usa Testcontainers para iniciar instâncias descartáveis de PostgreSQL e RabbitMQ. Ele verifica o fluxo de salvar, publicar, consumir e persistir os dados enriquecidos. O Gemini é substituído por uma implementação falsa para os testes não dependerem da rede nem de uma chave válida. Docker precisa estar ativo para executar os testes de integração.
+
+Execute a suíte com:
+
+```bash
+./mvnw test
 ```
