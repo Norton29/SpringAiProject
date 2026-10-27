@@ -1,7 +1,7 @@
 package com.nff.springiaproject.book.adapter.input.web;
 
 import com.nff.springiaproject.book.application.BookInput;
-import com.nff.springiaproject.book.domain.Book;
+import com.nff.springiaproject.book.domain.model.Book;
 import org.springframework.stereotype.Component;
 
 @Component

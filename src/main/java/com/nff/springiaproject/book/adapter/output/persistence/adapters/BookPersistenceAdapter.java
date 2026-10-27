@@ -1,7 +1,9 @@
-package com.nff.springiaproject.book.adapter.output.persistence;
+package com.nff.springiaproject.book.adapter.output.persistence.adapters;
 
-import com.nff.springiaproject.book.domain.Book;
-import com.nff.springiaproject.book.domain.BookRepository;
+import com.nff.springiaproject.book.adapter.output.persistence.SpringDataBookRepository;
+import com.nff.springiaproject.book.adapter.output.persistence.entities.BookJpaEntity;
+import com.nff.springiaproject.book.domain.model.Book;
+import com.nff.springiaproject.book.domain.intefaces.BookRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;

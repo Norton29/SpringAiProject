@@ -1,4 +1,4 @@
-package com.nff.springiaproject.book.domain;
+package com.nff.springiaproject.book.domain.intefaces;
 
 import java.util.List;
 import java.util.UUID;

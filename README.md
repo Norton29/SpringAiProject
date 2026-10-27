@@ -1,6 +1,6 @@
 # Bookstore API
 
-API REST para cadastro e consulta de livros, desenvolvida com Spring Boot. Na criação, o livro é salvo e uma solicitação de enriquecimento é colocada em uma fila RabbitMQ. Um consumidor processa a solicitação e usa Google Gemini para gerar resumo, recomendações e classificação do livro.
+API REST para cadastro e consulta de livros, desenvolvida com Spring Boot. Na criação, o livro e uma mensagem pendente de enriquecimento são salvos no PostgreSQL. Um publicador agenda o envio ao RabbitMQ; o consumidor processa a solicitação e usa Google Gemini para gerar resumo, recomendações e classificação do livro.
 
 ## Tecnologias
 
@@ -17,7 +17,7 @@ O código da funcionalidade de livros está organizado em camadas inspiradas na 
 - `book/domain`: entidades de domínio, estados e contratos
 - `book/application`: casos de uso e regras da aplicação
 - `book/adapter/input`: entrada HTTP e mensagens RabbitMQ
-- `book/adapter/output`: integrações com Gemini, banco de dados e publicação de mensagens
+- `book/adapter/output`: integrações com Gemini, banco de dados, outbox e publicação de mensagens
 - `config`: configuração da aplicação e do RabbitMQ
 
 Os controllers recebem e devolvem DTOs. O modelo de domínio não é usado diretamente como contrato HTTP.
@@ -79,7 +79,9 @@ Para compilar, executar os testes e verificar o projeto:
 
 ## Processamento assíncrono
 
-O `POST /books` responde depois de salvar o livro, sem esperar o Gemini. A resposta inicial contém `enrichmentStatus: "PENDING"`. A aplicação publica a solicitação no RabbitMQ e o consumidor atualiza o livro quando o enriquecimento terminar. Consulte `GET /books/{id}` para acompanhar o estado:
+O `POST /books` responde depois de salvar o livro e a solicitação pendente no PostgreSQL, sem esperar o Gemini. A resposta inicial contém `enrichmentStatus: "PENDING"`. Um agendador consulta as mensagens ainda não publicadas a cada 5 segundos, em lotes de até 20, e as envia ao exchange `book.enrichment.exchange` com a routing key `book.enrichment`. As mensagens do RabbitMQ são persistentes; a aplicação marca a solicitação como publicada depois de receber a confirmação do broker. Assim, se o envio falhar antes da confirmação, a mensagem continua pendente para uma nova tentativa.
+
+O consumidor da fila `book.enrichment.queue` enriquece o livro e persiste o resultado. Mensagens com falha são tentadas novamente até três vezes, com intervalo crescente. Depois das tentativas, o RabbitMQ encaminha a mensagem para o exchange e a fila de dead letter (`book.enrichment.dead-letter.exchange` e `book.enrichment.dead-letter.queue`); o consumidor dessa fila marca o livro como `FAILED`. Consulte `GET /books/{id}` para acompanhar o estado:
 
 - `PENDING`: aguardando processamento ou em processamento
 - `COMPLETED`: resumo, recomendações e classificação foram salvos
@@ -117,9 +119,9 @@ curl -X POST http://localhost:8080/books \
 
 ## Testes
 
-Os testes unitários de `BookService` usam JUnit e Mockito para verificar regras isoladas, como salvar o livro inicialmente como `PENDING` e enfileirar o ID sem chamar Gemini durante a requisição HTTP.
+Os testes unitários de `BookService` usam JUnit e Mockito para verificar regras isoladas, como salvar o livro inicialmente como `PENDING` e registrar o ID para publicação sem chamar Gemini durante a requisição HTTP. Também verificam o enriquecimento, o comportamento para livros inexistentes e a prevenção de novo enriquecimento de livros já concluídos.
 
-O teste de integração `BookEnrichmentFlowIntegrationTest` usa Testcontainers para iniciar instâncias descartáveis de PostgreSQL e RabbitMQ. Ele verifica o fluxo de salvar, publicar, consumir e persistir os dados enriquecidos. O Gemini é substituído por uma implementação falsa para os testes não dependerem da rede nem de uma chave válida. Docker precisa estar ativo para executar os testes de integração.
+O teste de integração `BookEnrichmentFlowIntegrationTest` usa Testcontainers para iniciar instâncias descartáveis de PostgreSQL e RabbitMQ. Ele verifica o fluxo de salvar o livro e a mensagem pendente, publicar no RabbitMQ, consumir a mensagem e persistir os dados enriquecidos. Também envia mensagens duplicadas e verifica que o livro é enriquecido apenas uma vez. O Gemini é substituído por uma implementação falsa, então os testes não dependem da rede nem de uma chave válida. Docker precisa estar ativo para executar os testes de integração.
 
 Execute a suíte com:
 

@@ -6,11 +6,11 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.nff.springiaproject.book.domain.Book;
-import com.nff.springiaproject.book.domain.BookEnrichment;
-import com.nff.springiaproject.book.domain.BookEnrichmentQueues;
+import com.nff.springiaproject.book.domain.model.Book;
+import com.nff.springiaproject.book.domain.intefaces.BookEnrichment;
+import com.nff.springiaproject.book.domain.intefaces.BookEnrichmentQueues;
 import com.nff.springiaproject.book.domain.BookEnrichmentStatus;
-import com.nff.springiaproject.book.domain.BookRepository;
+import com.nff.springiaproject.book.domain.intefaces.BookRepository;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;

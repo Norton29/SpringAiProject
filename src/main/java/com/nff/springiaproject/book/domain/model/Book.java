@@ -1,6 +1,8 @@
-package com.nff.springiaproject.book.domain;
+package com.nff.springiaproject.book.domain.model;
 
 import java.util.UUID;
+
+import com.nff.springiaproject.book.domain.BookEnrichmentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

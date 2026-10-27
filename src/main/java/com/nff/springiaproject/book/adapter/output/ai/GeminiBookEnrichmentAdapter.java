@@ -1,6 +1,6 @@
 package com.nff.springiaproject.book.adapter.output.ai;
 
-import com.nff.springiaproject.book.domain.BookEnrichment;
+import com.nff.springiaproject.book.domain.intefaces.BookEnrichment;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 

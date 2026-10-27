@@ -2,6 +2,8 @@ package com.nff.springiaproject.book.adapter.output.persistence;
 
 import java.util.List;
 import java.util.UUID;
+
+import com.nff.springiaproject.book.adapter.output.persistence.entities.BookEnrichmentQueueMessageJpaEntity;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 

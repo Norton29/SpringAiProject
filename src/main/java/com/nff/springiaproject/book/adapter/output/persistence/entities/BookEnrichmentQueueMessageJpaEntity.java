@@ -1,4 +1,4 @@
-package com.nff.springiaproject.book.adapter.output.persistence;
+package com.nff.springiaproject.book.adapter.output.persistence.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

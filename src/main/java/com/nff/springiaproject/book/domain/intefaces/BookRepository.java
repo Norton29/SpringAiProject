@@ -1,4 +1,6 @@
-package com.nff.springiaproject.book.domain;
+package com.nff.springiaproject.book.domain.intefaces;
+
+import com.nff.springiaproject.book.domain.model.Book;
 
 import java.util.List;
 import java.util.Optional;

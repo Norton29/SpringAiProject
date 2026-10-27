@@ -1,6 +1,8 @@
-package com.nff.springiaproject.book.adapter.output.persistence;
+package com.nff.springiaproject.book.adapter.output.persistence.adapters;
 
-import com.nff.springiaproject.book.domain.BookEnrichmentQueues;
+import com.nff.springiaproject.book.adapter.output.persistence.SpringDataBookEnrichmentQueueMessageRepository;
+import com.nff.springiaproject.book.adapter.output.persistence.entities.BookEnrichmentQueueMessageJpaEntity;
+import com.nff.springiaproject.book.domain.intefaces.BookEnrichmentQueues;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;

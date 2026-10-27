@@ -1,7 +1,7 @@
 package com.nff.springiaproject.book.adapter.output.messaging;
 
 import com.nff.springiaproject.book.application.BookEnrichmentRequest;
-import com.nff.springiaproject.book.domain.BookEnrichmentQueues;
+import com.nff.springiaproject.book.domain.intefaces.BookEnrichmentQueues;
 import com.nff.springiaproject.config.RabbitMqConfig;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.nff.springiaproject.book.domain;
+package com.nff.springiaproject.book.domain.intefaces;
 
 public interface BookEnrichment {
 
